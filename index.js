@@ -5,6 +5,8 @@ const app = express()
 const port = 3000 
 const bodyParser = require('body-parser')
 
+const config = require('./config/key')
+
 // application/x-www-form-urlencoded 와 같은 형식의 데이터를 분석 할 수 있게 해준다.
 app.use(bodyParser.urlencoded({extended : true}));
 
@@ -13,14 +15,14 @@ app.use(bodyParser.json());
 
 
 const mongoose = require('mongoose')
-mongoose.connect('mongodb+srv://choihyunho:gusgh0816@boilerplate.feh9f3z.mongodb.net/?retryWrites=true&w=majority',{
+mongoose.connect(config.mongoURI ,{
     useNewUrlParser : true, useUnifiedTopology : true
 }).then(()=> console.log('MongoDB Connected...')).catch(err => console.log('error'))
 
 const { User } = require('./models/User');
 
 
-app.get('/', (req, res) => res.send('Hello World!')) // 루트 디렉토리에 hello world! 출력
+app.get('/', (req, res) => res.send('Hello World! 123')) // 루트 디렉토리에 hello world! 출력
 
 // 회원가입을 위한 route
 app.post('/register', (req, res) => {
