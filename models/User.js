@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken')
 const saltRounds = 10; // salt 를 이용해서 비밀번호를 암호화 해야 함 -> salt 를 만들 때 10자리를 만들어서 암호화 한다.
 
 const userSchema = mongoose.Schema({
@@ -44,7 +45,7 @@ userSchema.pre('save', function(next){
         // 비밀번호를 암호화 시킨다.
         bcrypt.genSalt(saltRounds, function(err, salt) {
             if(err) {
-                return next(err)
+                return next(err);
             } else {
                 // myPlaintextPassword : 암호화 된 비밀번호가 아니라 postman 에 내가 직접 입력한 비밀번호
                 // const user = new User(req.body) 형식으로 req.body 를 모델에 넣었기 때문에  userSchema 의 password 를 가져오면 된다.
@@ -52,17 +53,45 @@ userSchema.pre('save', function(next){
                     // Store hash in your password DB.
                     // hash : 암호화 된 비밀번호
                     if(err) {
-                        return next(err)
+                        return next(err);
                     } else {
                         user.password = hash
                         next() // 완성
                     }
                 });
-            }
+            } 
         });
+    } else {
+        next();
     }    
 })
 
+userSchema.methods.comparePassword = function(plainPassword, cd){
+    // planPassword : 1234 등, 데이터베이스에 있는 암호화 된 비밀번호 "$2b$10$rwffndFzLFvUpxh6P1ql7u4bWg/4OXbdJwKYFUBSZe4sJeoIgXC5C"
+    // 1234 도 암호화화해서 디비와 같은지 확인(오른쪽 문자)
+    bcrypt.compare(plainPassword, this.password, function(err, isMatch){
+        if(err){
+            return cd(err);
+        } else {
+            return cd(null, isMatch); // 에러는 없고, 비밀번호는 같다 
+        }
+    })
+}
+
+userSchema.methods.getToken = function(cb){
+    // jsonwebtoken 을 이용해서 토큰 생성
+    let user = this;
+    
+    let token = jwt.sign(user._id.toHexString(), 'secretToken')
+    user.token = token
+    user.save(function(err, user){
+        if(err){
+            return cb(err);
+        } else {
+            cb(null, user) // 에러는 없고 유저정보 전달 -> index.js
+        }
+    })
+}
 
 const User = mongoose.model('User', userSchema)
 
