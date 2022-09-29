@@ -15,7 +15,6 @@ app.use(bodyParser.urlencoded({extended : true}));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-
 const mongoose = require('mongoose');
 mongoose.connect(config.mongoURI ,{
     useNewUrlParser : true, useUnifiedTopology : true
@@ -66,7 +65,7 @@ app.post('/api/user/login', (req, res) => {
                     } else {
                         // 토큰을 저장한다. 쿠키 ( 다른 방법도 있다. )
                         // 쿠키 저장하려면 라이브러리 다운 - express 에서 제공하는 ( npm install cookie-parser --save)
-                        res.cookie("x-auth", user.token)
+                        res.cookie("x_auth", user.token)
                             .status(200) // 성공
                             .json({loginSuccess : true, userId : user._id});
                     }
@@ -95,6 +94,18 @@ app.get('/api/user/auth', auth ,(req, res) => {
     })
 })
 
+
+// 로그아웃 기능
+// auth 를 사용하는 이유는 로그아웃 이라는 건 로그인 된 상태이기 때문에
+app.get('/api/user/logout', auth, (req, res)=>{
+    // 유저를 찾아서 업데이트 시켜주는 역할
+    User.findOneAndUpdate({_id : req.user._id}, {token : ""}, (err, user)=>{
+        if(err) return res.json({success : false, err});  
+        return res.status(200).send({
+                success : true
+            })
+        })
+    })
 
 
 
