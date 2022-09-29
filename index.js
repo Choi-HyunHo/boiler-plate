@@ -22,12 +22,13 @@ mongoose.connect(config.mongoURI ,{
 }).then(()=> console.log('MongoDB Connected...')).catch(err => console.log('error'));
 
 const { User } = require('./models/User');
+const { auth } = require('./middleware/auth');
 
 
 app.get('/', (req, res) => res.send('Hello World! 123')); // 루트 디렉토리에 hello world! 출력
 
 // 회원가입을 위한 route
-app.post('/register', (req, res) => {
+app.post('/api/user/register', (req, res) => {
     // 회원 가입 할 때 필요한 정보들을 client 에서 가져오면
     // 그것들을 데이터베이스에 넣어준다. -> User.js 모델을 가져온다.
 
@@ -43,7 +44,7 @@ app.post('/register', (req, res) => {
     }) 
 })
 
-app.post('/login', (req, res) => {
+app.post('/api/user/login', (req, res) => {
     // 1. 요청된 이메일을 데이터베이스에서 있는지 찾는다.
     User.findOne({email : req.body.email}, (err, userInfo) => {
         if(!userInfo){
@@ -74,5 +75,27 @@ app.post('/login', (req, res) => {
         })
     })
 })
+
+
+// auth 기능
+// 가운데 auth 는 미들웨어 : 중간에서 처리
+app.get('/api/user/auth', auth ,(req, res) => {
+    // 여기까지 미들웨어를 통과해 왔다는 뜻 -> 인증이 성공적으로 진행 됬다는 뜻.
+    res.status(200).json({
+        // 제공할 정보 - User.js
+        // 가능한 이유는 auth.js 에서 req.user = userInfo; 정보를 가져왔기 때문에
+        _id : req.user._id, 
+        isAdmin : req.user.role === 0 ? false : true,
+        isAuth : true,
+        email : req.user.email,
+        name : req.user.name,
+        lastname : req.user.lastname,
+        role : req.user.role,
+        image : req.user.image
+    })
+})
+
+
+
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`)) // 위의 포트(5000) 에서 실행
